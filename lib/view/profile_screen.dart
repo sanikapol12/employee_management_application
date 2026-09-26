@@ -178,7 +178,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                'Profile Photo Options',
+                'Profile Photo',
                 style: GoogleFonts.rajdhani(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
@@ -246,7 +246,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 },
               ),
 
-              // Option 4: Delete Photo (If photo exists)
+              // Option 4: Remove Photo (If photo exists)
               if (hasPhoto) ...[
                 const Divider(),
                 ListTile(
@@ -259,7 +259,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: const Icon(Icons.delete_outline_rounded, color: Color(0xFFDC2626)),
                   ),
                   title: Text(
-                    'Delete Profile Photo',
+                    'Remove Photo',
                     style: GoogleFonts.rajdhani(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -346,6 +346,401 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 16),
             ],
           ),
+        );
+      },
+    );
+  }
+
+  // Department to Roles mapping (roles strictly based on department)
+  static const Map<String, List<String>> departmentRoles = {
+    'Engineering': [
+      'Senior Software Engineer',
+      'Full Stack Developer',
+      'Cloud & DevOps Engineer',
+      'QA Automation Engineer',
+      'Frontend Developer',
+      'Backend Engineer',
+    ],
+    'Human Resources': [
+      'HR Executive',
+      'HR Manager',
+      'Talent Acquisition Specialist',
+      'HR Operations Lead',
+    ],
+    'Product & Design': [
+      'Product Manager',
+      'Lead UI/UX Designer',
+      'Product Analyst',
+      'UX Researcher',
+    ],
+    'Marketing & Sales': [
+      'Marketing Specialist',
+      'Digital Marketing Lead',
+      'Sales Executive',
+      'Business Development Manager',
+    ],
+    'Finance & Operations': [
+      'Financial Analyst',
+      'Senior Accountant',
+      'Operations Lead',
+      'Compliance Specialist',
+    ],
+  };
+
+  void _showDepartmentsBottomSheet() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          padding: const EdgeInsets.all(22.0),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 20,
+                offset: const Offset(0, -4),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0EA5E9).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.domain_rounded, color: Color(0xFF0EA5E9), size: 22),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Departments',
+                        style: GoogleFonts.rajdhani(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Explore organizational departments and associated roles',
+                style: GoogleFonts.rajdhani(
+                  fontSize: 13,
+                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ...departmentRoles.entries.map((entry) {
+                final deptName = entry.key;
+                final roles = entry.value;
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                    ),
+                  ),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                    leading: CircleAvatar(
+                      backgroundColor: const Color(0xFF0EA5E9).withValues(alpha: 0.15),
+                      child: Text(
+                        deptName[0],
+                        style: GoogleFonts.rajdhani(
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF0EA5E9),
+                        ),
+                      ),
+                    ),
+                    title: Text(
+                      deptName,
+                      style: GoogleFonts.rajdhani(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    subtitle: Text(
+                      '${roles.length} Roles available',
+                      style: GoogleFonts.rajdhani(
+                        fontSize: 13,
+                        color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                      ),
+                    ),
+                    trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _showRolesBottomSheet(deptName);
+                    },
+                  ),
+                );
+              }),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showRolesBottomSheet([String? initialDept]) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    String activeDept = (initialDept != null && departmentRoles.containsKey(initialDept))
+        ? initialDept
+        : (departmentRoles.containsKey(widget.authController.currentUser?.department)
+            ? widget.authController.currentUser!.department
+            : departmentRoles.keys.first);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final roles = departmentRoles[activeDept] ?? [];
+
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.72,
+              padding: const EdgeInsets.all(22.0),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.15),
+                    blurRadius: 20,
+                    offset: const Offset(0, -4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.badge_outlined, color: Color(0xFF10B981), size: 22),
+                          ),
+                          const SizedBox(width: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Designations & Roles',
+                                style: GoogleFonts.rajdhani(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              Text(
+                                'Roles strictly based on Department',
+                                style: GoogleFonts.rajdhani(
+                                  fontSize: 12,
+                                  color: const Color(0xFF10B981),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Horizontal Department Selector Chips
+                  Text(
+                    'SELECT DEPARTMENT',
+                    style: GoogleFonts.rajdhani(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.8,
+                      color: isDark ? Colors.grey.shade400 : const Color(0xFF64748B),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: departmentRoles.keys.map((dept) {
+                        final isSelected = dept == activeDept;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: ChoiceChip(
+                            label: Text(
+                              dept,
+                              style: GoogleFonts.rajdhani(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                                color: isSelected
+                                    ? Colors.white
+                                    : (isDark ? Colors.grey.shade300 : const Color(0xFF334155)),
+                              ),
+                            ),
+                            selected: isSelected,
+                            selectedColor: const Color(0xFF1E40AF),
+                            backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+                            onSelected: (bool selected) {
+                              if (selected) {
+                                setModalState(() {
+                                  activeDept = dept;
+                                });
+                              }
+                            },
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Header of active department
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Roles in $activeDept (${roles.length})',
+                        style: GoogleFonts.rajdhani(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF2563EB),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2563EB).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          activeDept,
+                          style: GoogleFonts.rajdhani(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF2563EB),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  // List of roles
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: roles.length,
+                      itemBuilder: (context, idx) {
+                        final role = roles[idx];
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                            ),
+                          ),
+                          child: ListTile(
+                            leading: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(Icons.work_outline_rounded, color: Color(0xFF10B981), size: 18),
+                            ),
+                            title: Text(
+                              role,
+                              style: GoogleFonts.rajdhani(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            subtitle: Text(
+                              'Department: $activeDept',
+                              style: GoogleFonts.rajdhani(
+                                fontSize: 12,
+                                color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                              ),
+                            ),
+                            trailing: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                'Role #${idx + 1}',
+                                style: GoogleFonts.rajdhani(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF10B981),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
         );
       },
     );
@@ -459,55 +854,99 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
 
-            const SizedBox(height: 12),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Column(
+                  children: [
+                    // Profile
+                    ListTile(
+                      leading: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2563EB).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.person_outline_rounded, color: Color(0xFF2563EB)),
+                      ),
+                      title: Text('Profile', style: GoogleFonts.rajdhani(fontSize: 16, fontWeight: FontWeight.w700)),
+                      subtitle: Text('View & verify employee info', style: GoogleFonts.rajdhani(fontSize: 13)),
+                      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+                      onTap: () => Navigator.pop(context),
+                    ),
 
-            // Profile
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF2563EB).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
+                    // Theme
+                    ListTile(
+                      leading: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF8B5CF6).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.palette_outlined, color: Color(0xFF8B5CF6)),
+                      ),
+                      title: Text('Theme', style: GoogleFonts.rajdhani(fontSize: 16, fontWeight: FontWeight.w700)),
+                      subtitle: Text('Dark to Light & Light to Dark', style: GoogleFonts.rajdhani(fontSize: 13)),
+                      trailing: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF8B5CF6).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          themeController.isDarkMode ? 'Dark' : 'Light',
+                          style: GoogleFonts.rajdhani(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF8B5CF6)),
+                        ),
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => const ThemeScreen()));
+                      },
+                    ),
+
+                    // Departments
+                    ListTile(
+                      leading: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0EA5E9).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.domain_rounded, color: Color(0xFF0EA5E9)),
+                      ),
+                      title: Text('Departments', style: GoogleFonts.rajdhani(fontSize: 16, fontWeight: FontWeight.w700)),
+                      subtitle: Text('5 active business departments', style: GoogleFonts.rajdhani(fontSize: 13)),
+                      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _showDepartmentsBottomSheet();
+                      },
+                    ),
+
+                    // Designations & Roles based on Department
+                    ListTile(
+                      leading: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.badge_outlined, color: Color(0xFF10B981)),
+                      ),
+                      title: Text('Designations & Roles', style: GoogleFonts.rajdhani(fontSize: 16, fontWeight: FontWeight.w700)),
+                      subtitle: Text('Roles filtered by department', style: GoogleFonts.rajdhani(fontSize: 13)),
+                      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _showRolesBottomSheet();
+                      },
+                    ),
+                  ],
                 ),
-                child: const Icon(Icons.person_outline_rounded, color: Color(0xFF2563EB)),
               ),
-              title: Text('Profile', style: GoogleFonts.rajdhani(fontSize: 16, fontWeight: FontWeight.w700)),
-              subtitle: Text('View & verify employee info', style: GoogleFonts.rajdhani(fontSize: 13)),
-              trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
-              onTap: () => Navigator.pop(context),
             ),
 
-            // Theme
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF8B5CF6).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.palette_outlined, color: Color(0xFF8B5CF6)),
-              ),
-              title: Text('Theme', style: GoogleFonts.rajdhani(fontSize: 16, fontWeight: FontWeight.w700)),
-              subtitle: Text('Dark to Light & Light to Dark', style: GoogleFonts.rajdhani(fontSize: 13)),
-              trailing: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF8B5CF6).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  themeController.isDarkMode ? 'Dark' : 'Light',
-                  style: GoogleFonts.rajdhani(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF8B5CF6)),
-                ),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const ThemeScreen()));
-              },
-            ),
-
-            const Spacer(),
-            const Divider(),
+            const Divider(height: 1),
 
             // Logout in Drawer (with confirmation)
             ListTile(
@@ -608,21 +1047,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
 
-              const SizedBox(height: 6),
-
-              TextButton(
-                onPressed: _showProfilePhotoOptions,
-                child: Text(
-                  'Edit / Delete Photo',
-                  style: GoogleFonts.rajdhani(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF2563EB),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 4),
+              const SizedBox(height: 12),
 
               // 2. Employee Name
               Center(
@@ -672,9 +1097,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _buildInfoTile('Phone Number', emp?.phone.isNotEmpty == true ? emp!.phone : 'N/A', Icons.phone_outlined),
               _buildInfoTile('Department', emp?.department.isNotEmpty == true ? emp!.department : 'N/A', Icons.domain_rounded),
               _buildInfoTile('Designation / Role', emp?.designation.isNotEmpty == true ? emp!.designation : 'N/A', Icons.work_outline_rounded),
-              _buildInfoTile('Salary / Package', emp?.salary.isNotEmpty == true ? emp!.salary : 'N/A', Icons.attach_money_rounded),
+              _buildInfoTile('Salary', emp?.salary.isNotEmpty == true ? emp!.salary : 'N/A', Icons.attach_money_rounded),
               _buildInfoTile('Date of Joining', emp?.joiningDate.isNotEmpty == true ? emp!.joiningDate : 'N/A', Icons.calendar_today_outlined),
               _buildInfoTile('Address / City', emp?.address.isNotEmpty == true ? emp!.address : 'N/A', Icons.location_on_outlined),
+              _buildInfoTile('Country', emp?.country.isNotEmpty == true ? emp!.country : 'N/A', Icons.public_rounded),
 
               const SizedBox(height: 24),
 

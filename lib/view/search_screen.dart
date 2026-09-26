@@ -32,6 +32,7 @@ class _SearchScreenState extends State<SearchScreen> {
     super.initState();
     employeeController = widget.employeeController ?? EmployeeController();
     employeeController.fetchEmployees();
+    employeeController.fetchCountries();
   }
 
   @override
@@ -273,6 +274,65 @@ class _SearchScreenState extends State<SearchScreen> {
                       }).toList(),
                     ),
                   ),
+                  if (selectedFilter == 'Country' && employeeController.countries.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(right: 6.0),
+                            child: ActionChip(
+                              avatar: const Icon(Icons.public_rounded, size: 14, color: primaryColor),
+                              label: Text(
+                                'Clear',
+                                style: GoogleFonts.rajdhani(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: primaryColor,
+                                ),
+                              ),
+                              onPressed: () {
+                                searchController.clear();
+                                _onSearchChanged('');
+                              },
+                            ),
+                          ),
+                          ...employeeController.countries
+                              .map((c) => c.country)
+                              .where((c) => c.isNotEmpty)
+                              .toSet()
+                              .take(15)
+                              .map((countryName) {
+                            final isCurr = searchController.text.toLowerCase() == countryName.toLowerCase();
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 6.0),
+                              child: ChoiceChip(
+                                label: Text(
+                                  countryName,
+                                  style: GoogleFonts.rajdhani(
+                                    fontSize: 12,
+                                    fontWeight: isCurr ? FontWeight.w700 : FontWeight.w600,
+                                  ),
+                                ),
+                                selected: isCurr,
+                                selectedColor: primaryColor,
+                                onSelected: (selected) {
+                                  if (selected) {
+                                    searchController.text = countryName;
+                                    _onSearchChanged(countryName);
+                                  } else {
+                                    searchController.clear();
+                                    _onSearchChanged('');
+                                  }
+                                },
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 12),
                 ],
 

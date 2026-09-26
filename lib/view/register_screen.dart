@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import '../controller/auth_controller.dart';
+import '../model/country_model.dart';
 import '../model/user_model.dart';
+import '../repository/employee_repository.dart';
 import 'bottom_nav_bar.dart';
 import 'widgets/avatar_image.dart';
 
@@ -20,6 +23,44 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final ImagePicker _imagePicker = ImagePicker();
   AutovalidateMode _autoValidateMode = AutovalidateMode.disabled;
 
+  // Department to Roles mapping (roles strictly based on department)
+  static const Map<String, List<String>> departmentRoles = {
+    'Engineering': [
+      'Senior Software Engineer',
+      'Full Stack Developer',
+      'Cloud & DevOps Engineer',
+      'QA Automation Engineer',
+      'Frontend Developer',
+      'Backend Engineer',
+    ],
+    'Human Resources': [
+      'HR Executive',
+      'HR Manager',
+      'Talent Acquisition Specialist',
+      'HR Operations Lead',
+    ],
+    'Product & Design': [
+      'Product Manager',
+      'Lead UI/UX Designer',
+      'Product Analyst',
+      'UX Researcher',
+    ],
+    'Marketing & Sales': [
+      'Marketing Specialist',
+      'Digital Marketing Lead',
+      'Sales Executive',
+      'Business Development Manager',
+    ],
+    'Finance & Operations': [
+      'Financial Analyst',
+      'Senior Accountant',
+      'Operations Lead',
+      'Compliance Specialist',
+    ],
+  };
+
+  String selectedDepartment = '';
+
   // Selected profile picture URL / identifier
   String selectedImageUrl = '';
   bool profilePicError = false;
@@ -34,7 +75,39 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController salaryController = TextEditingController();
   final TextEditingController joiningDateController = TextEditingController();
   final TextEditingController addressController = TextEditingController();
+  final TextEditingController countryController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+
+  // Country API state
+  List<CountryModel> _countries = [];
+  bool _isLoadingCountries = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCountries();
+  }
+
+  void _loadCountries() async {
+    setState(() {
+      _isLoadingCountries = true;
+    });
+    try {
+      final list = await EmployeeRepositoryImpl().getCountries();
+      if (mounted) {
+        setState(() {
+          _countries = list;
+          _isLoadingCountries = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingCountries = false;
+        });
+      }
+    }
+  }
 
   bool hidePassword = true;
   bool isRegistering = false;
@@ -78,6 +151,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     salaryController.dispose();
     joiningDateController.dispose();
     addressController.dispose();
+    countryController.dispose();
     passwordController.dispose();
     super.dispose();
   }
@@ -154,7 +228,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Choose Profile Picture *',
+                      'Choose Profile Picture',
                       style: GoogleFonts.rajdhani(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
@@ -350,14 +424,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  // Date picker for joining date
+  // Date picker for joining date (strictly past date, no today or future)
   void _pickJoiningDate() async {
     final now = DateTime.now();
+    final yesterday = DateTime(now.year, now.month, now.day - 1);
     final picked = await showDatePicker(
       context: context,
-      initialDate: now,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2035),
+      initialDate: yesterday,
+      firstDate: DateTime(1980),
+      lastDate: yesterday, // Strictly forbids today and future dates
     );
 
     if (picked != null) {
@@ -368,23 +443,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  // Register function with full mandatory validation
+  // Register function with full mandatory validation (photo is optional)
   void doRegister() async {
-    // Check Profile Picture selection
-    if (selectedImageUrl.trim().isEmpty) {
-      setState(() {
-        profilePicError = true;
-      });
-    } else {
-      setState(() {
-        profilePicError = false;
-      });
-    }
-
     // Trigger Form field validators
     final isFormValid = _formKey.currentState?.validate() ?? false;
 
-    if (!isFormValid || selectedImageUrl.trim().isEmpty) {
+    if (!isFormValid) {
       setState(() {
         _autoValidateMode = AutovalidateMode.always;
       });
@@ -392,7 +456,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'All fields including Profile Picture are mandatory!',
+            'Please fill all mandatory fields properly!',
             style: GoogleFonts.rajdhani(fontWeight: FontWeight.w700),
           ),
           backgroundColor: const Color(0xFFDC2626),
@@ -418,6 +482,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       salary: salaryController.text.trim(),
       joiningDate: joiningDateController.text.trim(),
       address: addressController.text.trim(),
+      country: countryController.text.trim(),
       imageUrl: selectedImageUrl.trim(),
     );
 
@@ -619,26 +684,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             style: TextButton.styleFrom(padding: EdgeInsets.zero),
                             child: Text(
                               selectedImageUrl.isNotEmpty
-                                  ? 'Change Profile Photo *'
-                                  : 'Select Profile Photo *',
+                                  ? 'Change Profile Photo'
+                                  : 'Select Profile Photo (Optional)',
                               style: GoogleFonts.rajdhani(
-                                color: profilePicError
-                                    ? const Color(0xFFDC2626)
-                                    : const Color(0xFF2563EB),
+                                color: const Color(0xFF2563EB),
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
                           ),
-                          if (profilePicError)
-                            Text(
-                              '* Profile picture is mandatory',
-                              style: GoogleFonts.rajdhani(
-                                color: const Color(0xFFDC2626),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
                         ],
                       ),
                     ),
@@ -733,37 +787,48 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           const SizedBox(height: 14),
 
-                          // 3. Email (Mandatory)
+                          // 3. Email (Mandatory - corporate or Gmail)
                           TextFormField(
                             controller: emailController,
                             keyboardType: TextInputType.emailAddress,
                             style: GoogleFonts.rajdhani(fontSize: 15, fontWeight: FontWeight.w600),
                             decoration: _buildInputDecoration(
                               label: 'Work Email',
-                              hint: 'e.g. mark@company.com',
+                              hint: 'Enter your email',
                               icon: Icons.mail_outline_rounded,
                             ),
                             validator: (val) {
                               if (val == null || val.trim().isEmpty) {
                                 return 'Email Address is mandatory';
                               }
+                              final trimmed = val.trim();
                               final emailRegex = RegExp(r"^[\w\.-]+@([\w-]+\.)+[\w-]{2,4}$");
-                              if (!emailRegex.hasMatch(val.trim())) {
+                              if (!emailRegex.hasMatch(trimmed)) {
                                 return 'Enter a valid corporate email address';
+                              }
+                              if (trimmed.toLowerCase().endsWith('@gmail.com')) {
+                                final localPart = trimmed.split('@')[0];
+                                if (localPart.length < 6 || localPart.length > 30) {
+                                  return 'Gmail username must be between 6 and 30 characters';
+                                }
                               }
                               return null;
                             },
                           ),
                           const SizedBox(height: 14),
 
-                          // 4. Phone (Mandatory)
+                          // 4. Phone (Mandatory - strictly 10 digits max and min)
                           TextFormField(
                             controller: phoneController,
                             keyboardType: TextInputType.phone,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(10),
+                            ],
                             style: GoogleFonts.rajdhani(fontSize: 15, fontWeight: FontWeight.w600),
                             decoration: _buildInputDecoration(
                               label: 'Phone Number',
-                              hint: 'e.g. 9876543210',
+                              hint: 'Enter your no.',
                               icon: Icons.phone_outlined,
                             ),
                             validator: (val) {
@@ -771,8 +836,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 return 'Phone Number is mandatory';
                               }
                               final digits = val.replaceAll(RegExp(r'[^0-9]'), '');
-                              if (digits.length < 10) {
-                                return 'Phone number must have at least 10 digits';
+                              if (digits.length != 10) {
+                                return 'Phone number must be exactly 10 digits';
                               }
                               return null;
                             },
@@ -780,66 +845,113 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           const SizedBox(height: 14),
 
                           // 5. Department (Mandatory)
-                          TextFormField(
-                            controller: departmentController,
-                            style: GoogleFonts.rajdhani(fontSize: 15, fontWeight: FontWeight.w600),
+                          DropdownButtonFormField<String>(
+                            key: ValueKey('dept_$selectedDepartment'),
+                            initialValue: selectedDepartment.isNotEmpty ? selectedDepartment : null,
+                            isExpanded: true,
+                            style: GoogleFonts.rajdhani(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                            ),
+                            dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
                             decoration: _buildInputDecoration(
                               label: 'Department',
-                              hint: 'e.g. Engineering, HR, Product, Sales',
+                              hint: 'Select Department',
                               icon: Icons.domain_rounded,
                             ),
+                            items: departmentRoles.keys.map((dept) {
+                              return DropdownMenuItem<String>(
+                                value: dept,
+                                child: Text(dept),
+                              );
+                            }).toList(),
+                            onChanged: (val) {
+                              setState(() {
+                                selectedDepartment = val ?? '';
+                                departmentController.text = selectedDepartment;
+                                designationController.clear();
+                              });
+                            },
                             validator: (val) {
                               if (val == null || val.trim().isEmpty) {
                                 return 'Department is mandatory';
                               }
-                              if (val.trim().length < 2) {
-                                return 'Enter a valid department name';
-                              }
                               return null;
                             },
                           ),
                           const SizedBox(height: 14),
 
-                          // 6. Designation (Mandatory)
-                          TextFormField(
-                            controller: designationController,
-                            style: GoogleFonts.rajdhani(fontSize: 15, fontWeight: FontWeight.w600),
+                          // 6. Designation / Role (Mandatory - strictly based on selected Department)
+                          DropdownButtonFormField<String>(
+                            key: ValueKey('role_${selectedDepartment}_${designationController.text}'),
+                            initialValue: (selectedDepartment.isNotEmpty &&
+                                    (departmentRoles[selectedDepartment]?.contains(designationController.text) ?? false))
+                                ? designationController.text
+                                : null,
+                            isExpanded: true,
+                            style: GoogleFonts.rajdhani(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                            ),
+                            dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
                             decoration: _buildInputDecoration(
                               label: 'Designation / Role',
-                              hint: 'e.g. Senior Software Engineer',
+                              hint: selectedDepartment.isEmpty
+                                  ? 'Select Department first'
+                                  : 'Select Role for $selectedDepartment',
                               icon: Icons.work_outline_rounded,
                             ),
+                            items: selectedDepartment.isEmpty
+                                ? null
+                                : (departmentRoles[selectedDepartment] ?? []).map((role) {
+                                    return DropdownMenuItem<String>(
+                                      value: role,
+                                      child: Text(role),
+                                    );
+                                  }).toList(),
+                            onChanged: selectedDepartment.isEmpty
+                                ? null
+                                : (val) {
+                                    setState(() {
+                                      designationController.text = val ?? '';
+                                    });
+                                  },
                             validator: (val) {
                               if (val == null || val.trim().isEmpty) {
                                 return 'Designation is mandatory';
                               }
-                              if (val.trim().length < 2) {
-                                return 'Enter a valid designation';
-                              }
                               return null;
                             },
                           ),
                           const SizedBox(height: 14),
 
-                          // 7. Salary (Mandatory)
+                          // 7. Salary (Mandatory - strictly Salary, not Package)
                           TextFormField(
                             controller: salaryController,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                             style: GoogleFonts.rajdhani(fontSize: 15, fontWeight: FontWeight.w600),
                             decoration: _buildInputDecoration(
-                              label: 'Salary / Package',
-                              hint: 'e.g. \$85,000 / year or 60,000 / month',
+                              label: 'Salary',
+                              hint: 'e.g. 50000',
                               icon: Icons.attach_money_rounded,
                             ),
                             validator: (val) {
                               if (val == null || val.trim().isEmpty) {
-                                return 'Salary / Package is mandatory';
+                                return 'Salary is mandatory';
+                              }
+                              final numVal = num.tryParse(val.replaceAll(RegExp(r'[^0-9.]'), ''));
+                              if (numVal == null || numVal <= 0) {
+                                return 'Enter a valid numeric salary amount';
                               }
                               return null;
                             },
                           ),
                           const SizedBox(height: 14),
 
-                          // 8. Joining Date (Mandatory)
+                          // 8. Joining Date (Mandatory - strictly past date only, no today or future date)
                           TextFormField(
                             controller: joiningDateController,
                             readOnly: true,
@@ -858,6 +970,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               if (val == null || val.trim().isEmpty) {
                                 return 'Joining Date is mandatory';
                               }
+                              try {
+                                final parts = val.trim().split('-');
+                                if (parts.length == 3) {
+                                  final day = int.parse(parts[0]);
+                                  final month = int.parse(parts[1]);
+                                  final year = int.parse(parts[2]);
+                                  final selectedDate = DateTime(year, month, day);
+                                  final now = DateTime.now();
+                                  final today = DateTime(now.year, now.month, now.day);
+                                  if (!selectedDate.isBefore(today)) {
+                                    return 'Joining date cannot be today or a future date';
+                                  }
+                                }
+                              } catch (_) {}
                               return null;
                             },
                           ),
@@ -884,14 +1010,68 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           const SizedBox(height: 14),
 
-                          // 10. Password (Mandatory)
+                          // 10. Country (Mandatory - Live API Synced)
+                          Autocomplete<String>(
+                            initialValue: TextEditingValue(text: countryController.text),
+                            optionsBuilder: (TextEditingValue textEditingValue) {
+                              if (textEditingValue.text.isEmpty) {
+                                return _countries
+                                    .map((c) => c.country)
+                                    .where((c) => c.isNotEmpty)
+                                    .toSet()
+                                    .take(8);
+                              }
+                              return _countries
+                                  .map((c) => c.country)
+                                  .where((c) => c
+                                      .toLowerCase()
+                                      .contains(textEditingValue.text.toLowerCase()))
+                                  .toSet();
+                            },
+                            onSelected: (String selection) {
+                              countryController.text = selection;
+                            },
+                            fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
+                              textEditingController.addListener(() {
+                                countryController.text = textEditingController.text;
+                              });
+                              return TextFormField(
+                                controller: textEditingController,
+                                focusNode: focusNode,
+                                style: GoogleFonts.rajdhani(fontSize: 15, fontWeight: FontWeight.w600),
+                                decoration: _buildInputDecoration(
+                                  label: 'Country',
+                                  hint: 'Enter country',
+                                  icon: Icons.public_rounded,
+                                  suffixIcon: _isLoadingCountries
+                                      ? const SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: Center(
+                                            child: CircularProgressIndicator(strokeWidth: 2),
+                                          ),
+                                        )
+                                      : null,
+                                ),
+                                validator: (val) {
+                                  if (val == null || val.trim().isEmpty) {
+                                    return 'Country is mandatory';
+                                  }
+                                  return null;
+                                },
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 14),
+
+                          // 11. Password (Mandatory)
                           TextFormField(
                             controller: passwordController,
                             obscureText: hidePassword,
                             style: GoogleFonts.rajdhani(fontSize: 15, fontWeight: FontWeight.w600),
                             decoration: _buildInputDecoration(
                               label: 'Account Password',
-                              hint: 'Minimum 6 characters',
+                              hint: 'Enter your password',
                               icon: Icons.lock_outline_rounded,
                               suffixIcon: IconButton(
                                 icon: Icon(
@@ -912,8 +1092,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               if (val == null || val.trim().isEmpty) {
                                 return 'Password is mandatory';
                               }
-                              if (val.length < 6) {
-                                return 'Password must be at least 6 characters';
+                              if (val.length <= 8) {
+                                return 'Password must be more than 8 characters';
+                              }
+                              if (!RegExp(r'\d').hasMatch(val)) {
+                                return 'Password must contain at least one number';
+                              }
+                              if (!RegExp(r'[!@#\$%^&*(),.?":{}|<>_\-]').hasMatch(val)) {
+                                return 'Password must contain at least 1 special character';
                               }
                               return null;
                             },

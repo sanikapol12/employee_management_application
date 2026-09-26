@@ -149,9 +149,11 @@ void main() {
     await tester.tap(settingsBtn);
     await tester.pumpAndSettle();
 
-    // Drawer should be open and contain: Profile, Theme, Logout
+    // Drawer should be open and contain: Profile, Theme, Departments, Designations & Roles, Logout
     expect(find.text('Profile'), findsWidgets);
     expect(find.text('Theme'), findsOneWidget);
+    expect(find.text('Departments'), findsOneWidget);
+    expect(find.text('Designations & Roles'), findsOneWidget);
     expect(find.text('Logout'), findsOneWidget);
   });
 
@@ -166,8 +168,8 @@ void main() {
       home: RegisterScreen(authController: controller),
     ));
 
-    // Profile photo button is present
-    expect(find.text('Select Profile Photo *'), findsOneWidget);
+    // Profile photo button is present (optional)
+    expect(find.text('Select Profile Photo (Optional)'), findsOneWidget);
 
     // All fields have mandatory '*' marker
     expect(find.text('Employee ID *'), findsOneWidget);
@@ -176,7 +178,7 @@ void main() {
     expect(find.text('Phone Number *'), findsOneWidget);
     expect(find.text('Department *'), findsOneWidget);
     expect(find.text('Designation / Role *'), findsOneWidget);
-    expect(find.text('Salary / Package *'), findsOneWidget);
+    expect(find.text('Salary *'), findsOneWidget);
     expect(find.text('Joining Date *'), findsOneWidget);
     expect(find.text('Office / City Address *'), findsOneWidget);
     expect(find.text('Account Password *'), findsOneWidget);
@@ -187,8 +189,7 @@ void main() {
     await tester.tap(submitBtn);
     await tester.pumpAndSettle();
 
-    // Verify mandatory validations fire
-    expect(find.text('* Profile picture is mandatory'), findsOneWidget);
+    // Verify mandatory validations fire (photo is optional)
     expect(find.text('Employee ID is mandatory'), findsOneWidget);
     expect(find.text('Full Name is mandatory'), findsOneWidget);
     expect(find.text('Email Address is mandatory'), findsOneWidget);
@@ -231,5 +232,53 @@ void main() {
     // Should switch back to Light Mode
     expect(themeController.isDarkMode, isFalse);
     expect(find.text('Light Mode Active'), findsOneWidget);
+  });
+
+  testWidgets('LoginScreen form validation triggers on empty and invalid inputs', (WidgetTester tester) async {
+    await tester.pumpWidget(const MaterialApp(
+      home: LoginScreen(),
+    ));
+
+    // Tap SIGN IN without filling anything
+    final signInBtn = find.widgetWithText(ElevatedButton, 'SIGN IN');
+    expect(signInBtn, findsOneWidget);
+    await tester.tap(signInBtn);
+    await tester.pumpAndSettle();
+
+    // Verify form validation error messages
+    expect(find.text('Work Email is required'), findsOneWidget);
+    expect(find.text('Password is required'), findsOneWidget);
+
+    // Enter invalid email format and short password
+    final emailField = find.byType(TextFormField).first;
+    final passwordField = find.byType(TextFormField).last;
+
+    await tester.enterText(emailField, 'invalidemail');
+    await tester.enterText(passwordField, '123');
+    await tester.tap(signInBtn);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Enter a valid email address (e.g. name@company.com)'), findsOneWidget);
+    expect(find.text('Password must be more than 8 characters'), findsOneWidget);
+  });
+
+  testWidgets('RegisterScreen form includes Country API synced field and mandatory validation', (WidgetTester tester) async {
+    final controller = AuthController();
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() => tester.view.resetPhysicalSize());
+
+    await tester.pumpWidget(MaterialApp(
+      home: RegisterScreen(authController: controller),
+    ));
+
+    expect(find.text('Country *'), findsOneWidget);
+
+    final submitBtn = find.widgetWithText(ElevatedButton, 'SUBMIT REGISTRATION');
+    await tester.ensureVisible(submitBtn);
+    await tester.tap(submitBtn);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Country is mandatory'), findsOneWidget);
   });
 }

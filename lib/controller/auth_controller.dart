@@ -69,6 +69,9 @@ class AuthController extends ChangeNotifier {
       address: extraDetails != null && extraDetails.address.isNotEmpty
           ? extraDetails.address
           : 'Office Campus',
+      country: extraDetails != null && extraDetails.country.isNotEmpty
+          ? extraDetails.country
+          : 'India',
       imageUrl: extraDetails != null && extraDetails.imageUrl.isNotEmpty
           ? extraDetails.imageUrl
           : (fbUser.photoURL ?? ''),

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:employee_management_application/model/country_model.dart';
 import 'package:employee_management_application/model/employee_model.dart';
 import 'package:employee_management_application/repository/employee_repository.dart';
 
@@ -61,6 +62,99 @@ void main() {
       expect(countries.length, 1);
       expect(countries.first.id, '1');
       expect(countries.first.country, 'India');
+    });
+
+    test('getCountryById returns single CountryModel on 200 OK', () async {
+      final mockClient = MockClient((request) async {
+        expect(request.url.path, '/api/v1/country/1');
+        expect(request.method, 'GET');
+        return http.Response(
+          jsonEncode({
+            'id': '1',
+            'country': 'India',
+            'flag': 'https://flag.example.com/in.png',
+            'createdAt': '2026-01-01T00:00:00.000Z',
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      });
+
+      final repository = EmployeeRepositoryImpl(client: mockClient);
+      final country = await repository.getCountryById('1');
+
+      expect(country.id, '1');
+      expect(country.country, 'India');
+    });
+
+    test('createCountry posts country and returns created object on 201', () async {
+      final newCountry = CountryModel(
+        id: '99',
+        country: 'Canada',
+        flag: 'https://flag.example.com/ca.png',
+      );
+
+      final mockClient = MockClient((request) async {
+        expect(request.method, 'POST');
+        expect(request.url.path, '/api/v1/country');
+        final decoded = jsonDecode(request.body);
+        expect(decoded['country'], 'Canada');
+        return http.Response(
+          jsonEncode({
+            'id': '99',
+            'country': 'Canada',
+            'flag': 'https://flag.example.com/ca.png',
+            'createdAt': '2026-09-26T12:00:00.000Z',
+          }),
+          201,
+          headers: {'content-type': 'application/json'},
+        );
+      });
+
+      final repository = EmployeeRepositoryImpl(client: mockClient);
+      final result = await repository.createCountry(newCountry);
+
+      expect(result.id, '99');
+      expect(result.country, 'Canada');
+    });
+
+    test('updateCountry sends PUT and returns updated object on 200', () async {
+      final updatedCountry = CountryModel(
+        id: '1',
+        country: 'India Updated',
+        flag: 'https://flag.example.com/in.png',
+      );
+
+      final mockClient = MockClient((request) async {
+        expect(request.method, 'PUT');
+        expect(request.url.path, '/api/v1/country/1');
+        return http.Response(
+          jsonEncode(updatedCountry.toJson()),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      });
+
+      final repository = EmployeeRepositoryImpl(client: mockClient);
+      final result = await repository.updateCountry('1', updatedCountry);
+
+      expect(result.country, 'India Updated');
+    });
+
+    test('deleteCountry sends DELETE and returns true on 200', () async {
+      final mockClient = MockClient((request) async {
+        expect(request.method, 'DELETE');
+        expect(request.url.path, '/api/v1/country/1');
+        return http.Response(
+          jsonEncode({'id': '1'}),
+          200,
+        );
+      });
+
+      final repository = EmployeeRepositoryImpl(client: mockClient);
+      final success = await repository.deleteCountry('1');
+
+      expect(success, isTrue);
     });
 
     test('getEmployeeById returns single EmployeeModel on 200 OK', () async {

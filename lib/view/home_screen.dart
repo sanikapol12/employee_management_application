@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../core/app_logger.dart';
 import '../controller/auth_controller.dart';
 import '../controller/employee_controller.dart';
+import '../model/country_model.dart';
 import '../model/employee_model.dart';
 import 'add_edit_employee_screen.dart';
 import 'employee_detail_screen.dart';
@@ -171,6 +172,295 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // Open Country REST API Manager / Viewer Dialog
+  void openCountryApiDialog() {
+    AppLogger.activity('Opened Countries API Directory Dialog');
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    String countrySearchQuery = '';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final allCountries = employeeController.countries;
+            final filteredCountries = allCountries.where((c) {
+              if (countrySearchQuery.isEmpty) return true;
+              return c.country.toLowerCase().contains(countrySearchQuery.toLowerCase()) ||
+                  c.id.contains(countrySearchQuery);
+            }).toList();
+
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.82,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.public_rounded, color: Color(0xFF1E40AF), size: 26),
+                          const SizedBox(width: 8),
+                          Text(
+                            'COUNTRY REST API',
+                            style: GoogleFonts.rajdhani(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  Text(
+                    'Live API: /api/v1/country (${allCountries.length} countries loaded)',
+                    style: GoogleFonts.rajdhani(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF64748B),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          height: 42,
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.search_rounded, size: 18, color: Color(0xFF64748B)),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: TextField(
+                                  onChanged: (val) {
+                                    setModalState(() {
+                                      countrySearchQuery = val;
+                                    });
+                                  },
+                                  style: GoogleFonts.rajdhani(fontSize: 14, fontWeight: FontWeight.w600),
+                                  decoration: const InputDecoration(
+                                    hintText: 'Search API countries...',
+                                    border: InputBorder.none,
+                                    isDense: true,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1E40AF),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        icon: const Icon(Icons.add, size: 16, color: Colors.white),
+                        label: Text(
+                          'POST',
+                          style: GoogleFonts.rajdhani(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white),
+                        ),
+                        onPressed: () => _promptAddCountry(setModalState),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  const Divider(),
+                  Expanded(
+                    child: filteredCountries.isEmpty
+                        ? Center(
+                            child: Text(
+                              'No countries match search',
+                              style: GoogleFonts.rajdhani(fontSize: 15, fontWeight: FontWeight.w600),
+                            ),
+                          )
+                        : ListView.builder(
+                            itemCount: filteredCountries.length,
+                            itemBuilder: (context, idx) {
+                              final country = filteredCountries[idx];
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 6),
+                                decoration: BoxDecoration(
+                                  color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                                  ),
+                                ),
+                                child: ListTile(
+                                  dense: true,
+                                  leading: CircleAvatar(
+                                    radius: 16,
+                                    backgroundColor: const Color(0xFF1E40AF).withValues(alpha: 0.15),
+                                    backgroundImage: country.flag.isNotEmpty && country.flag.startsWith('http')
+                                        ? NetworkImage(country.flag)
+                                        : null,
+                                    child: country.flag.isEmpty || !country.flag.startsWith('http')
+                                        ? const Icon(Icons.public, size: 18, color: Color(0xFF1E40AF))
+                                        : null,
+                                  ),
+                                  title: Text(
+                                    country.country,
+                                    style: GoogleFonts.rajdhani(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    'ID: ${country.id} ${country.createdAt.isNotEmpty ? "• ${country.createdAt.split("T")[0]}" : ""}',
+                                    style: GoogleFonts.rajdhani(fontSize: 12),
+                                  ),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      // GET /country/:id
+                                      IconButton(
+                                        icon: const Icon(Icons.info_outline_rounded, size: 18, color: Color(0xFF2563EB)),
+                                        tooltip: 'GET /country/:id',
+                                        onPressed: () => _viewCountryDetails(country.id),
+                                      ),
+                                      // DELETE /country/:id
+                                      IconButton(
+                                        icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Color(0xFFDC2626)),
+                                        tooltip: 'DELETE /country/:id',
+                                        onPressed: () async {
+                                          final ok = await employeeController.deleteCountry(country.id);
+                                          setModalState(() {});
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  ok ? 'Country deleted successfully!' : 'Country removed locally.',
+                                                  style: GoogleFonts.rajdhani(fontWeight: FontWeight.w600),
+                                                ),
+                                                behavior: SnackBarBehavior.floating,
+                                              ),
+                                            );
+                                          }
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _viewCountryDetails(String id) async {
+    final country = await employeeController.getCountryById(id);
+    if (!mounted) return;
+    if (country != null) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(
+            'Country Details (GET /country/$id)',
+            style: GoogleFonts.rajdhani(fontWeight: FontWeight.w700),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Country Name: ${country.country}', style: GoogleFonts.rajdhani(fontSize: 16, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 6),
+              Text('Country ID: ${country.id}', style: GoogleFonts.rajdhani(fontSize: 14)),
+              const SizedBox(height: 6),
+              Text('Flag URL: ${country.flag.isNotEmpty ? country.flag : "None"}', style: GoogleFonts.rajdhani(fontSize: 13)),
+              const SizedBox(height: 6),
+              Text('Created At: ${country.createdAt.isNotEmpty ? country.createdAt : "N/A"}', style: GoogleFonts.rajdhani(fontSize: 13)),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('CLOSE', style: GoogleFonts.rajdhani(fontWeight: FontWeight.w700)),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  void _promptAddCountry(void Function(void Function()) setModalState) {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Add Country (POST /country)', style: GoogleFonts.rajdhani(fontWeight: FontWeight.w700)),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: 'Enter Country Name (e.g. Canada)',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('CANCEL', style: GoogleFonts.rajdhani(fontWeight: FontWeight.w700)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E40AF)),
+            onPressed: () async {
+              final name = controller.text.trim();
+              if (name.isNotEmpty) {
+                Navigator.pop(ctx);
+                await employeeController.addCountry(CountryModel(
+                  id: DateTime.now().millisecondsSinceEpoch.toString().substring(9),
+                  country: name,
+                  createdAt: DateTime.now().toIso8601String(),
+                ));
+                setModalState(() {});
+              }
+            },
+            child: Text('CREATE', style: GoogleFonts.rajdhani(fontWeight: FontWeight.w700, color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -186,6 +476,13 @@ class _HomeScreenState extends State<HomeScreen> {
             color: Colors.white,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.public_rounded),
+            tooltip: 'Country REST API Directory',
+            onPressed: openCountryApiDialog,
+          ),
+        ],
         backgroundColor: isDark ? const Color(0xFF0F172A) : const Color(0xFF1E3A8A),
         foregroundColor: Colors.white,
         automaticallyImplyLeading: false,

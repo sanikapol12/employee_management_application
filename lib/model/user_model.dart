@@ -11,6 +11,7 @@ class UserModel {
   String salary;
   String joiningDate;
   String address;
+  String country;
   String imageUrl;
 
   UserModel({
@@ -23,6 +24,7 @@ class UserModel {
     this.salary = '',
     this.joiningDate = '',
     this.address = '',
+    this.country = '',
     this.imageUrl = '',
   });
 }

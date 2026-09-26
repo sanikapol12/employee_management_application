@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../core/app_logger.dart';
 import '../model/country_model.dart';
@@ -322,7 +323,7 @@ class _AddEditEmployeeScreenState extends State<AddEditEmployeeScreen> {
                           style: GoogleFonts.rajdhani(fontSize: 15, fontWeight: FontWeight.w600),
                           decoration: _buildInputDecoration(
                             label: 'Email Address',
-                            hint: 'e.g. rahul@ems.com',
+                            hint: 'Enter your email',
                             icon: Icons.mail_outline_rounded,
                           ),
                           validator: (val) {
@@ -341,15 +342,23 @@ class _AddEditEmployeeScreenState extends State<AddEditEmployeeScreen> {
                         TextFormField(
                           controller: mobileController,
                           keyboardType: TextInputType.phone,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(10),
+                          ],
                           style: GoogleFonts.rajdhani(fontSize: 15, fontWeight: FontWeight.w600),
                           decoration: _buildInputDecoration(
                             label: 'Mobile Number',
-                            hint: 'e.g. 9876543210',
+                            hint: 'Enter your no.',
                             icon: Icons.phone_outlined,
                           ),
                           validator: (val) {
                             if (val == null || val.trim().isEmpty) {
                               return 'Please enter mobile number';
+                            }
+                            final digits = val.replaceAll(RegExp(r'[^0-9]'), '');
+                            if (digits.length != 10) {
+                              return 'Mobile number must be exactly 10 digits';
                             }
                             return null;
                           },
@@ -384,8 +393,8 @@ class _AddEditEmployeeScreenState extends State<AddEditEmployeeScreen> {
                               style: GoogleFonts.rajdhani(
                                   fontSize: 15, fontWeight: FontWeight.w600),
                               decoration: _buildInputDecoration(
-                                label: 'Country (API synced)',
-                                hint: 'Select or type country (e.g. India)',
+                                label: 'Country',
+                                hint: 'Enter country',
                                 icon: Icons.public_rounded,
                                 suffixIcon: _isLoadingCountries
                                     ? const SizedBox(

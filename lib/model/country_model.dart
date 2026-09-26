@@ -22,11 +22,25 @@ class CountryModel {
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      if (id.isNotEmpty) 'id': id,
       'country': country,
       'flag': flag,
       'createdAt': createdAt,
     };
+  }
+
+  CountryModel copyWith({
+    String? id,
+    String? country,
+    String? flag,
+    String? createdAt,
+  }) {
+    return CountryModel(
+      id: id ?? this.id,
+      country: country ?? this.country,
+      flag: flag ?? this.flag,
+      createdAt: createdAt ?? this.createdAt,
+    );
   }
 
   @override

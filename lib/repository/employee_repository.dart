@@ -18,7 +18,14 @@ class ApiException implements Exception {
 
 /// Abstract Employee Repository Interface (Clean Architecture)
 abstract class EmployeeRepository {
+  // Country REST APIs
   Future<List<CountryModel>> getCountries();
+  Future<CountryModel> getCountryById(String id);
+  Future<CountryModel> createCountry(CountryModel country);
+  Future<CountryModel> updateCountry(String id, CountryModel country);
+  Future<bool> deleteCountry(String id);
+
+  // Employee REST APIs
   Future<List<EmployeeModel>> getEmployees();
   Future<EmployeeModel> getEmployeeById(String id);
   Future<EmployeeModel> createEmployee(EmployeeModel employee);
@@ -36,7 +43,7 @@ class EmployeeRepositoryImpl implements EmployeeRepository {
   EmployeeRepositoryImpl({http.Client? client})
       : client = client ?? http.Client();
 
-  // 1. GET /country
+  // 1. GET /country — Fetch all countries
   @override
   Future<List<CountryModel>> getCountries() async {
     final url = '$baseUrl/country';
@@ -61,6 +68,125 @@ class EmployeeRepositoryImpl implements EmployeeRepository {
       if (e is ApiException) rethrow;
       AppLogger.error('GET /country network failure', e);
       throw ApiException('Network error while fetching countries: $e');
+    }
+  }
+
+  // 2. GET /country/:id — Fetch country by ID
+  @override
+  Future<CountryModel> getCountryById(String id) async {
+    final url = '$baseUrl/country/$id';
+    AppLogger.apiRequest('GET', url);
+
+    try {
+      final response = await client.get(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+      );
+      AppLogger.apiResponse('GET', url, response.statusCode, response.body);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        return CountryModel.fromJson(data);
+      } else if (response.statusCode == 404) {
+        final err = ApiException('Country not found with ID: $id', 404);
+        AppLogger.error('GET /country/$id', err);
+        throw err;
+      } else {
+        final err = ApiException('Failed to fetch country $id', response.statusCode);
+        AppLogger.error('GET /country/$id', err);
+        throw err;
+      }
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      AppLogger.error('GET /country/$id network failure', e);
+      throw ApiException('Network error while fetching country $id: $e');
+    }
+  }
+
+  // 3. POST /country — Create new country
+  @override
+  Future<CountryModel> createCountry(CountryModel country) async {
+    final url = '$baseUrl/country';
+    final requestBody = jsonEncode(country.toJson());
+    AppLogger.apiRequest('POST', url, requestBody);
+
+    try {
+      final response = await client.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: requestBody,
+      );
+      AppLogger.apiResponse('POST', url, response.statusCode, response.body);
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        return CountryModel.fromJson(data);
+      } else {
+        final err = ApiException('Failed to create country', response.statusCode);
+        AppLogger.error('POST /country', err);
+        throw err;
+      }
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      AppLogger.error('POST /country network failure', e);
+      throw ApiException('Network error while creating country: $e');
+    }
+  }
+
+  // 4. PUT /country/:id — Update existing country
+  @override
+  Future<CountryModel> updateCountry(String id, CountryModel country) async {
+    final url = '$baseUrl/country/$id';
+    final requestBody = jsonEncode(country.toJson());
+    AppLogger.apiRequest('PUT', url, requestBody);
+
+    try {
+      final response = await client.put(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: requestBody,
+      );
+      AppLogger.apiResponse('PUT', url, response.statusCode, response.body);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        return CountryModel.fromJson(data);
+      } else {
+        final err = ApiException('Failed to update country $id', response.statusCode);
+        AppLogger.error('PUT /country/$id', err);
+        throw err;
+      }
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      AppLogger.error('PUT /country/$id network failure', e);
+      throw ApiException('Network error while updating country: $e');
+    }
+  }
+
+  // 5. DELETE /country/:id — Delete country
+  @override
+  Future<bool> deleteCountry(String id) async {
+    final url = '$baseUrl/country/$id';
+    AppLogger.apiRequest('DELETE', url);
+
+    try {
+      final response = await client.delete(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+      );
+      AppLogger.apiResponse('DELETE', url, response.statusCode, response.body);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return true;
+      } else {
+        final err = ApiException('Failed to delete country $id', response.statusCode);
+        AppLogger.error('DELETE /country/$id', err);
+        throw err;
+      }
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      AppLogger.error('DELETE /country/$id network failure', e);
+      throw ApiException('Network error while deleting country: $e');
     }
   }
 

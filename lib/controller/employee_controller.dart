@@ -164,6 +164,73 @@ class EmployeeController extends ChangeNotifier {
     }
   }
 
+  // Fetch single country by ID from API (GET /country/:id)
+  Future<CountryModel?> getCountryById(String id) async {
+    AppLogger.activity('Fetching country by ID', {'id': id});
+    try {
+      final country = await _repository.getCountryById(id);
+      AppLogger.activity('Country retrieved by ID', {'id': id, 'country': country.country});
+      return country;
+    } catch (e) {
+      AppLogger.error('getCountryById($id)', e);
+      return null;
+    }
+  }
+
+  // Create country via API (POST /country)
+  Future<bool> addCountry(CountryModel newCountry) async {
+    AppLogger.activity('Adding new country to API', {'country': newCountry.country});
+    try {
+      final created = await _repository.createCountry(newCountry);
+      _countries.insert(0, created);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _countries.insert(0, newCountry);
+      notifyListeners();
+      AppLogger.error('addCountry failed, added locally', e);
+      return false;
+    }
+  }
+
+  // Update country via API (PUT /country/:id)
+  Future<bool> updateCountry(String id, CountryModel country) async {
+    AppLogger.activity('Updating country via API', {'id': id, 'country': country.country});
+    try {
+      final updated = await _repository.updateCountry(id, country);
+      final idx = _countries.indexWhere((c) => c.id == id);
+      if (idx != -1) {
+        _countries[idx] = updated;
+      }
+      notifyListeners();
+      return true;
+    } catch (e) {
+      final idx = _countries.indexWhere((c) => c.id == id);
+      if (idx != -1) {
+        _countries[idx] = country;
+      }
+      notifyListeners();
+      AppLogger.error('updateCountry failed, updated locally', e);
+      return false;
+    }
+  }
+
+  // Delete country via API (DELETE /country/:id)
+  Future<bool> deleteCountry(String id) async {
+    AppLogger.activity('Deleting country via API', {'id': id});
+    try {
+      await _repository.deleteCountry(id);
+      _countries.removeWhere((c) => c.id == id);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _countries.removeWhere((c) => c.id == id);
+      notifyListeners();
+      AppLogger.error('deleteCountry failed, removed locally', e);
+      return false;
+    }
+  }
+
   // Fetch single employee by ID from API (GET /employee/:id)
   Future<EmployeeModel?> getEmployeeById(String id) async {
     AppLogger.activity('Fetching employee by ID', {'id': id});
