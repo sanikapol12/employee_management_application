@@ -1,17 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
 import 'controller/theme_controller.dart';
 import 'view/splash_screen.dart';
+import 'your_signature_store.dart';
 
-void main() async {
-  // Ensure Flutter engine bindings are initialized
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  runApp(const EmployeeManagementApp());
+  // Launches "Your Signature" Artificial Pipe Cleaner Website (Keychains & Flowers)
+  runApp(const YourSignatureApp());
 }
 
 class EmployeeManagementApp extends StatelessWidget {
