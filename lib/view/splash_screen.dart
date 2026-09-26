@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../controller/auth_controller.dart';
+import 'bottom_nav_bar.dart';
 import 'login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -15,14 +18,24 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    // Navigate to Login Screen automatically after 3 seconds
-    // (Typical splash screen delay for apps and college project demos)
-    _timer = Timer(const Duration(seconds: 3), () {
+    final authController = AuthController();
+    // Navigate automatically after 2.5 seconds based on auth status
+    _timer = Timer(const Duration(milliseconds: 2500), () {
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-        );
+        if (authController.currentUser != null) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  BottomNavBarScreen(authController: authController),
+            ),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginScreen()),
+          );
+        }
       }
     });
   }
@@ -35,8 +48,10 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    const primaryColor = Color(0xFF1E3A8A);
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
         child: Center(
           child: Padding(
@@ -46,96 +61,104 @@ class _SplashScreenState extends State<SplashScreen> {
               children: [
                 const Spacer(),
 
-                // Logo container with Three People Emoji
+                // Professional Corporate Logo
                 Container(
-                  padding: const EdgeInsets.all(24.0),
+                  width: 90,
+                  height: 90,
                   decoration: BoxDecoration(
-                    color: Colors.indigo.shade50,
-                    shape: BoxShape.circle,
+                    borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.indigo.withValues(alpha: 0.15),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
+                        color: const Color(0xFF2563EB).withValues(alpha: 0.35),
+                        blurRadius: 24,
+                        offset: const Offset(0, 10),
                       ),
                     ],
                   ),
-                  child: const Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Three people emoji requested by user
-                      Text(
-                        '👥',
-                        style: TextStyle(fontSize: 56),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: Image.asset(
+                      'assets/app_logo.png',
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Color(0xFF1E3A8A), Color(0xFF2563EB)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.badge_rounded,
+                          color: Colors.white,
+                          size: 46,
+                        ),
                       ),
-                      SizedBox(height: 6),
-                      Text(
-                        '👨‍💼 👩‍💼 🧑‍💼',
-                        style: TextStyle(fontSize: 22),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
 
-                const SizedBox(height: 32),
+                const SizedBox(height: 28),
 
                 // App Title
-                const Text(
-                  'Employee Manager',
+                Text(
+                  'EMPLOYEE MANAGER',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                    color: Color(0xFF1E293B),
+                  style: GoogleFonts.rajdhani(
+                    fontSize: 30,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.5,
+                    color: const Color(0xFF0F172A),
                   ),
                 ),
 
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
 
                 // Subtitle / Tagline
                 Text(
                   'Connect • Collaborate • Manage',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.grey.shade600,
-                    letterSpacing: 0.3,
+                  style: GoogleFonts.rajdhani(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF64748B),
+                    letterSpacing: 0.8,
                   ),
                 ),
 
                 const Spacer(),
 
-                // Loading Indicator while waiting to navigate
-                SizedBox(
-                  width: 32,
-                  height: 32,
+                // Loading Indicator
+                const SizedBox(
+                  width: 28,
+                  height: 28,
                   child: CircularProgressIndicator(
-                    strokeWidth: 3,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.indigo.shade600),
+                    strokeWidth: 2.5,
+                    valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
                   ),
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
 
                 Text(
                   'Loading workspace...',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey.shade500,
+                  style: GoogleFonts.rajdhani(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF94A3B8),
                   ),
                 ),
 
                 const SizedBox(height: 24),
 
-                // Project credit / human touch
+                // Architecture info
                 Text(
-                  'Developed with Flutter • MVC Architecture',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade400,
-                    fontStyle: FontStyle.italic,
+                  'Enterprise Edition • MVC Architecture',
+                  style: GoogleFonts.rajdhani(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF94A3B8),
+                    letterSpacing: 0.5,
                   ),
                 ),
 
