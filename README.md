@@ -1,4 +1,5 @@
-# 👥 Employee Management Application (Flutter Assignment) 👨‍💼👩‍💼🧑‍💼
+# flutter-developer-as-final-83628-sanika
+## 👥 Employee Management Application (Flutter Assignment) 👨‍💼👩‍💼🧑‍💼
 
 A responsive Employee Management Application built in Flutter for the **Flutter Developer Assignment (Deadline: 30th Sep 2026)**. Designed with a practical MVC pattern and clean, accessible college-student style code.
 
@@ -67,3 +68,4 @@ Run test suite:
 ```bash
 flutter test
 ```
+
